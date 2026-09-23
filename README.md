@@ -1,6 +1,6 @@
 # Hearing-Ready
 
-[Live browser demo](https://sharonbasovich.github.io/hearing-ready/)
+[Live browser demo](https://sharonbasovich.github.io/hearing-ready/) · [Two-minute walkthrough](https://sharonbasovich.github.io/hearing-ready/media/demo.mp4)
 
 **A local-first evidence-bundle compiler for Ontario tenants preparing for a Landlord and Tenant Board (LTB) hearing** — focused on the T6 maintenance-application workflow and issues raised under s.82 of the Residential Tenancies Act, 2006.
 
