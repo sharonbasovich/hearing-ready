@@ -21,7 +21,7 @@ export interface RentSafeResult {
   fetchedAt: string;
 }
 
-// Suffix/direction words users type inconsistently ("road" vs "RD") — never required.
+// Suffix words users type inconsistently ("road" vs "RD") — never required.
 const SOFT_TOKENS = new Set([
   'RD', 'ROAD', 'ST', 'STREET', 'AVE', 'AVENUE', 'BLVD', 'BOULEVARD', 'DR', 'DRIVE',
   'CRES', 'CRESCENT', 'CT', 'COURT', 'LN', 'LANE', 'PL', 'PLACE', 'PKWY', 'PARKWAY',
@@ -37,9 +37,20 @@ function matchTokens(query: string): string[] {
     .filter((t) => t.length >= 2 && !SOFT_TOKENS.has(t));
 }
 
-// Street-type words stay soft, but spelled-out directions (EAST/WEST/…) are
-// significant: '55 BLOOR ST E' and '55 BLOOR ST W' are different buildings.
+// Street-type words stay soft, but directions are significant:
+// '55 BLOOR ST E' and '55 BLOOR ST W' are different buildings. Single-letter
+// directions are normalized to the spelled-out form before comparing, so
+// 'Bloor St E' and 'Bloor St East' behave identically.
 const ADDR_SOFT = new Set([...SOFT_TOKENS].filter((t) => !['EAST', 'WEST', 'NORTH', 'SOUTH'].includes(t)));
+
+const DIR_ABBR: Record<string, string> = { E: 'EAST', W: 'WEST', N: 'NORTH', S: 'SOUTH' };
+
+/** Normalizes one uppercase address token (single-letter directions → full words). */
+const normTok = (t: string): string => DIR_ABBR[t] ?? t;
+
+/** Significant address tokens: soft suffixes dropped, but every digit token kept
+ *  (a one-digit street number like "9" is still required — prevents 9 vs 19 matches). */
+const significant = (t: string): boolean => !ADDR_SOFT.has(t) && (t.length >= 2 || /\d/.test(t));
 
 const UNIT_WORDS =
   /\b(UNIT|SUITE|STE|APT|APARTMENT|BSMT|BASEMENT|ROOM|RM|FL|FLOOR|PH|PENTHOUSE|TH|#)\s*[\dA-Z-]*/g;
@@ -61,8 +72,8 @@ function buildingTokens(address: string): string[] {
     segs.find((s) => /\d/.test(s) && hasName(s)) ?? segs.find((s) => /\d/.test(s)) ?? segs[0] ?? '';
   return seg
     .split(/[\s/-]+/)
-    .map((t) => t.replace(/[^A-Z0-9]/g, ''))
-    .filter((t) => t.length >= 2 && !ADDR_SOFT.has(t));
+    .map((t) => normTok(t.replace(/[^A-Z0-9]/g, '')))
+    .filter(significant);
 }
 
 export interface AddressMatch {
@@ -85,8 +96,8 @@ export function checkAddressMatch(caseAddress: string, siteAddress: string): Add
     siteAddress
       .toUpperCase()
       .split(/[\s/-]+/)
-      .map((t) => t.replace(/[^A-Z0-9]/g, ''))
-      .filter((t) => t.length >= 2 && !ADDR_SOFT.has(t)),
+      .map((t) => normTok(t.replace(/[^A-Z0-9]/g, '')))
+      .filter(significant),
   );
   const verifiable = required.length > 0 && site.size > 0;
   return { ok: verifiable && required.every((t) => site.has(t)), verifiable, requiredTokens: required };

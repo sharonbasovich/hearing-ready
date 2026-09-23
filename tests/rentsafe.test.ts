@@ -28,6 +28,21 @@ describe('checkAddressMatch', () => {
     expect(checkAddressMatch('999 York Mills Rd', '1325 YORK MILLS RD').ok).toBe(false);
   });
 
+  it('treats abbreviated directions as significant (E vs W)', () => {
+    expect(checkAddressMatch('55 Bloor St E', '55 BLOOR ST E').ok).toBe(true);
+    expect(checkAddressMatch('55 Bloor St E', '55 BLOOR ST W').ok).toBe(false);
+    expect(checkAddressMatch('55 Bloor St W', '55 BLOOR ST E').ok).toBe(false);
+    expect(checkAddressMatch('200 King St N, Unit 5', '200 KING ST N').ok).toBe(true);
+    expect(checkAddressMatch('200 King St N, Unit 5', '200 KING ST S').ok).toBe(false);
+  });
+
+  it('keeps one-digit street numbers (9 vs 19 are different buildings)', () => {
+    expect(checkAddressMatch('9 Elm St', '9 ELM ST').ok).toBe(true);
+    expect(checkAddressMatch('9 Elm St', '19 ELM ST').ok).toBe(false);
+    expect(checkAddressMatch('Unit 4, 9 Elm St', '9 ELM ST').ok).toBe(true);
+    expect(checkAddressMatch('19 Elm St', '9 ELM ST').ok).toBe(false);
+  });
+
   it('flags unverifiable cases instead of matching', () => {
     expect(checkAddressMatch('', '1325 YORK MILLS RD')).toMatchObject({ ok: false, verifiable: false });
     expect(checkAddressMatch('Unit 3', '1325 YORK MILLS RD').verifiable).toBe(false);

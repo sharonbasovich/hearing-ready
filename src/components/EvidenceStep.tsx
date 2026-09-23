@@ -184,6 +184,7 @@ function RentSafePanel({ update, caseAddress }: { update: Props['update']; caseA
     if (!query.trim()) return;
     setBusy(true);
     setError(null);
+    setAckMismatch(false);
     try {
       setResult(await searchBuildings(query));
     } catch (e) {
@@ -197,6 +198,7 @@ function RentSafePanel({ update, caseAddress }: { update: Props['update']; caseA
   async function attach(rec: BuildingRecord) {
     const siteAddress = String(rec['SITE ADDRESS'] ?? '');
     const match = checkAddressMatch(caseAddress, siteAddress);
+    if (!match.ok && !ackMismatch) return; // safety net; the button is disabled too
     const meta = {
       dataset: 'apartment-building-evaluation',
       query,
