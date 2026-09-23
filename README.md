@@ -15,7 +15,7 @@ Built for **LexHack 2026** (Devpost: https://lexhack-2026.devpost.com). Demo dat
 ## Local-first by design
 
 - All uploaded files live in the browser's IndexedDB (Dexie). **Nothing is sent to a server or an LLM.**
-- The only network feature is the optional RentSafeTO lookup, which sends only the street name you type to the public CKAN endpoint (`datastore_search`, dataset `apartment-building-evaluation`, no API key). The app is fully functional without it.
+- The only network feature is the optional RentSafeTO lookup, which sends only the street name you type to the public CKAN endpoint (`datastore_search`, dataset `apartment-building-evaluation`, no API key). The app is fully functional without it. The endpoint sends no CORS headers, so the app loads it via CKAN's `?callback=` JSONP support (a `<script>` GET to the city endpoint) — the trade-off is documented in `src/rentsafe.ts`.
 - Checksums are shown to help you confirm which exact bytes are in the bundle. A checksum does **not** prove a file's authenticity or provenance.
 
 ## Important limitations

@@ -21,6 +21,22 @@ export interface RentSafeResult {
   fetchedAt: string;
 }
 
+// Suffix/direction words users type inconsistently ("road" vs "RD") — never required.
+const SOFT_TOKENS = new Set([
+  'RD', 'ROAD', 'ST', 'STREET', 'AVE', 'AVENUE', 'BLVD', 'BOULEVARD', 'DR', 'DRIVE',
+  'CRES', 'CRESCENT', 'CT', 'COURT', 'LN', 'LANE', 'PL', 'PLACE', 'PKWY', 'PARKWAY',
+  'TERR', 'TERRACE', 'WAY', 'CIR', 'CIRCLE', 'E', 'W', 'N', 'S', 'EAST', 'WEST', 'NORTH', 'SOUTH',
+]);
+
+/** Tokens that must appear in SITE ADDRESS for a record to be a plausible match. */
+function matchTokens(query: string): string[] {
+  return query
+    .trim()
+    .toUpperCase()
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && !SOFT_TOKENS.has(t));
+}
+
 export function datastoreSearchUrl(query: string, limit = 10): string {
   const params = new URLSearchParams({
     resource_id: DATASTORE_RESOURCE_ID,
@@ -30,19 +46,61 @@ export function datastoreSearchUrl(query: string, limit = 10): string {
   return `${CKAN_BASE}/datastore_search?${params.toString()}`;
 }
 
-export async function searchBuildings(query: string): Promise<RentSafeResult> {
-  const url = datastoreSearchUrl(query);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Toronto Open Data request failed (HTTP ${res.status})`);
-  const json = await res.json();
-  if (!json.success) throw new Error('Toronto Open Data returned an error');
-  return {
-    records: json.result.records as BuildingRecord[],
-    total: json.result.total as number,
-    query,
-    sourceUrl: url,
-    fetchedAt: new Date().toISOString(),
-  };
+let jsonpSeq = 0;
+
+/**
+ * CKAN serves JSONP via ?callback= — used because the API does not send CORS
+ * headers, so a plain fetch() is blocked in browsers.
+ */
+export function searchBuildings(query: string): Promise<RentSafeResult> {
+  const tokens = query.trim().split(/\s+/).filter(Boolean);
+  // CKAN's full-text q is unreliable for multi-word addresses; numeric tokens
+  // (street numbers) match most precisely, so prefer them server-side.
+  const digitTokens = tokens.filter((t) => /\d/.test(t));
+  const serverQuery = (digitTokens.length ? digitTokens : tokens).join(' ') || query.trim();
+  const base = datastoreSearchUrl(serverQuery, 25);
+  return new Promise((resolve, reject) => {
+    const cb = `__hearingReadyRentsafe${++jsonpSeq}`;
+    const w = window as unknown as Record<string, unknown>;
+    const script = document.createElement('script');
+    const cleanup = () => {
+      delete w[cb];
+      script.remove();
+      clearTimeout(timer);
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Toronto Open Data request timed out'));
+    }, 15_000);
+    w[cb] = (json: { success?: boolean; result?: { records?: BuildingRecord[]; total?: number } }) => {
+      cleanup();
+      if (!json?.success || !json.result) {
+        reject(new Error('Toronto Open Data returned an error'));
+        return;
+      }
+      const raw = json.result.records ?? [];
+      const required = matchTokens(query);
+      const filtered = required.length
+        ? raw.filter((r) => {
+            const addr = String(r['SITE ADDRESS'] ?? '').toUpperCase();
+            return required.every((t) => addr.includes(t));
+          })
+        : raw;
+      resolve({
+        records: filtered.length || !required.length ? filtered : raw,
+        total: json.result.total ?? 0,
+        query,
+        sourceUrl: base,
+        fetchedAt: new Date().toISOString(),
+      });
+    };
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('Toronto Open Data request failed'));
+    };
+    script.src = `${base}&callback=${cb}`;
+    document.head.appendChild(script);
+  });
 }
 
 /** Human-readable summary of a RentSafeTO evaluation record, used in the exhibit page. */
