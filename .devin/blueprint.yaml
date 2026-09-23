@@ -1,0 +1,13 @@
+initialize:
+  - run: npm install
+knowledge:
+  - name: lint
+    contents: |
+      npm run lint && npm run build   # oxlint + tsc -b (typecheck) + vite build
+  - name: test
+    contents: |
+      npx vitest run                  # unit + PDF-generation tests
+  - name: startup
+    contents: |
+      npm run dev                     # http://localhost:5173
+      App is fully client-side; "Load sample case" populates a synthetic bundle.
