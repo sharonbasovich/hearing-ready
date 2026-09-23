@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { CaseBundle, Exhibit } from '../types';
-import { classifyFile, exhibitNumber, formatBytes, kindLabel, moveExhibit, removeExhibit, sourceLabel } from '../lib/exhibits';
+import { classifyFile, exhibitNumber, exhibitSourceLabel, formatBytes, kindLabel, moveExhibit, removeExhibit } from '../lib/exhibits';
 import { sha256Hex, shortHash, uuid } from '../lib/bytes';
 import { putFile, deleteFile } from '../store';
 import { searchBuildings, checkAddressMatch, type BuildingRecord, type RentSafeResult, DATASET_PAGE_URL } from '../rentsafe';
@@ -137,7 +137,7 @@ export default function EvidenceStep({ bundle, update, onNext, onBack }: Props) 
               <div className="exhibit-head">
                 <span className={`chip${ex.source === 'public-data' ? ' public' : ''}`}>E{n}</span>
                 <span className="exhibit-name">{ex.fileName}</span>
-                <span className="exhibit-meta">{kindLabel(ex.kind)} · {sourceLabel(ex.source)} · {formatBytes(ex.byteSize)}</span>
+                <span className="exhibit-meta">{kindLabel(ex.kind)} · {exhibitSourceLabel(ex)} · {formatBytes(ex.byteSize)}</span>
                 <div className="exhibit-actions">
                   <button className="btn small" aria-label={`Move exhibit ${n} earlier`} onClick={() => update((b) => ({ ...b, exhibits: moveExhibit(b.exhibits, ex.id, -1) }))}>↑</button>
                   <button className="btn small" aria-label={`Move exhibit ${n} later`} onClick={() => update((b) => ({ ...b, exhibits: moveExhibit(b.exhibits, ex.id, 1) }))}>↓</button>

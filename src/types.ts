@@ -8,6 +8,8 @@ export interface PublicRecordMeta {
   fetchedAt: string; // ISO timestamp
   sourceUrl: string;
   recordId?: string;
+  /** true when the record is invented demo data, not a live API result. */
+  synthetic?: boolean;
 }
 
 export interface Exhibit {

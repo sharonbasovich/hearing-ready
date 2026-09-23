@@ -11,7 +11,7 @@ import {
 } from 'pdf-lib';
 import type { CaseBundle, Exhibit } from '../types';
 import { formatEventDate, formatLongDate, sortEvents } from '../lib/dates';
-import { exhibitNumber, kindLabel, sourceLabel } from '../lib/exhibits';
+import { exhibitNumber, exhibitSourceLabel, kindLabel } from '../lib/exhibits';
 import { summarizeRecord, DATASET_PAGE_URL } from '../rentsafe';
 
 export const PAGE_W = 612; // US Letter
@@ -405,7 +405,7 @@ async function drawExhibit(ctx: RenderCtx, ex: Exhibit, bundle: CaseBundle, inpu
   const n = exhibitNumber(bundle, ex.id) ?? 0;
   heading(ctx, `Exhibit ${n} — ${sanitize(ex.fileName)}`);
 
-  ctx.page.drawText(`${kindLabel(ex.kind)} · ${sourceLabel(ex.source)}`, { x: MARGIN, y: ctx.y, size: 10, font: ctx.fonts.bold, color: ACCENT });
+  ctx.page.drawText(`${kindLabel(ex.kind)} · ${exhibitSourceLabel(ex)}`, { x: MARGIN, y: ctx.y, size: 10, font: ctx.fonts.bold, color: ACCENT });
   ctx.y -= 18;
 
   const meta: [string, string][] = [
@@ -535,14 +535,26 @@ function drawTextBoxStart(ctx: RenderCtx) {
 
 function drawPublicRecord(ctx: RenderCtx, ex: Exhibit) {
   const meta = ex.publicRecord;
+  const synthetic = meta?.synthetic === true;
   ctx.page.drawRectangle({ x: MARGIN, y: ctx.y - 52, width: CONTENT_W, height: 58, color: CHIP_BG, borderColor: LINK, borderWidth: 0.8 });
-  ctx.page.drawText('PUBLIC DATA — CITY OF TORONTO OPEN DATA (RentSafeTO)', { x: MARGIN + 12, y: ctx.y - 14, size: 8, font: ctx.fonts.bold, color: LINK });
-  const l1 = `Fetched ${meta ? formatLongDate(meta.fetchedAt) : '—'} · Query: "${meta?.query ?? ''}"`;
-  const l2 = `Dataset: Apartment Building Evaluation · ${DATASET_PAGE_URL}`;
-  ctx.page.drawText(l1.slice(0, 95), { x: MARGIN + 12, y: ctx.y - 28, size: 8.5, font: ctx.fonts.regular, color: INK });
-  ctx.page.drawText(l2.slice(0, 95), { x: MARGIN + 12, y: ctx.y - 40, size: 8.5, font: ctx.fonts.regular, color: INK });
-  if (meta?.sourceUrl) {
-    addLink(ctx, { x: MARGIN + 12, y: ctx.y - 44, w: ctx.fonts.regular.widthOfTextAtSize(l2.slice(0, 95), 8.5), h: 12 }, { url: DATASET_PAGE_URL });
+  if (synthetic) {
+    ctx.page.drawText('SYNTHETIC SAMPLE — FICTIONAL DATA, NOT AN ACTUAL CITY OF TORONTO RECORD', { x: MARGIN + 12, y: ctx.y - 14, size: 8, font: ctx.fonts.bold, color: LINK });
+    const l1 = 'Format inspired by RentSafeTO evaluations. Every value below is invented for demonstration.';
+    const l2 = `Dataset page shown as a format reference only: ${DATASET_PAGE_URL}`;
+    ctx.page.drawText(l1.slice(0, 95), { x: MARGIN + 12, y: ctx.y - 28, size: 8.5, font: ctx.fonts.regular, color: INK });
+    ctx.page.drawText(l2.slice(0, 95), { x: MARGIN + 12, y: ctx.y - 40, size: 8.5, font: ctx.fonts.regular, color: INK });
+    if (meta?.sourceUrl) {
+      addLink(ctx, { x: MARGIN + 12, y: ctx.y - 44, w: ctx.fonts.regular.widthOfTextAtSize(l2.slice(0, 95), 8.5), h: 12 }, { url: DATASET_PAGE_URL });
+    }
+  } else {
+    ctx.page.drawText('PUBLIC DATA — CITY OF TORONTO OPEN DATA (RentSafeTO)', { x: MARGIN + 12, y: ctx.y - 14, size: 8, font: ctx.fonts.bold, color: LINK });
+    const l1 = `Fetched ${meta ? formatLongDate(meta.fetchedAt) : '—'} · Query: "${meta?.query ?? ''}"`;
+    const l2 = `Dataset: Apartment Building Evaluation · ${DATASET_PAGE_URL}`;
+    ctx.page.drawText(l1.slice(0, 95), { x: MARGIN + 12, y: ctx.y - 28, size: 8.5, font: ctx.fonts.regular, color: INK });
+    ctx.page.drawText(l2.slice(0, 95), { x: MARGIN + 12, y: ctx.y - 40, size: 8.5, font: ctx.fonts.regular, color: INK });
+    if (meta?.sourceUrl) {
+      addLink(ctx, { x: MARGIN + 12, y: ctx.y - 44, w: ctx.fonts.regular.widthOfTextAtSize(l2.slice(0, 95), 8.5), h: 12 }, { url: DATASET_PAGE_URL });
+    }
   }
   ctx.y -= 68;
 
@@ -565,7 +577,12 @@ function drawPublicRecord(ctx: RenderCtx, ex: Exhibit) {
       ctx.y -= 13.5;
     }
     ctx.y -= 6;
-    ctx.page.drawText('Scores are as published by the City of Toronto. This exhibit reproduces public data and is not verified against the underlying inspection file.', { x: MARGIN, y: ctx.y, size: 8, font: ctx.fonts.oblique, color: MUTED });
+    ctx.page.drawText(
+      synthetic
+        ? 'All values above are invented sample data — they are NOT published by the City of Toronto and are not a real building record.'
+        : 'Scores are as published by the City of Toronto. This exhibit reproduces public data and is not verified against the underlying inspection file.',
+      { x: MARGIN, y: ctx.y, size: 8, font: ctx.fonts.oblique, color: MUTED },
+    );
     ctx.y -= 16;
   } else {
     drawTextExhibit(ctx, ex);

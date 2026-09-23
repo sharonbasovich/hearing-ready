@@ -59,6 +59,12 @@ export function sourceLabel(source: Exhibit['source']): string {
   }
 }
 
+/** Source label for display; invented demo records are never labeled as City data. */
+export function exhibitSourceLabel(ex: Exhibit): string {
+  if (ex.publicRecord?.synthetic) return 'Synthetic sample (RentSafeTO format)';
+  return sourceLabel(ex.source);
+}
+
 export function classifyFile(fileName: string, mimeType: string): Exhibit['kind'] {
   const lower = fileName.toLowerCase();
   if (mimeType.startsWith('image/')) return 'photo';

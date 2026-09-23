@@ -122,10 +122,11 @@ export async function buildSampleData(): Promise<SampleData> {
 
   const rentsafeMeta = {
     dataset: 'apartment-building-evaluation',
-    query: 'FICTIONAL AVE (sample)',
+    query: 'FICTIONAL AVE (synthetic sample)',
     fetchedAt: new Date().toISOString(),
     sourceUrl: 'https://open.toronto.ca/dataset/apartment-building-evaluation/',
     recordId: 'sample',
+    synthetic: true,
   };
 
   const exhibits: Exhibit[] = [
@@ -185,7 +186,7 @@ export async function buildSampleData(): Promise<SampleData> {
       kind: 'public-record',
       source: 'public-data',
       mimeType: 'application/json',
-      description: 'SAMPLE public-data exhibit in the same format as a live RentSafeTO lookup — City of Toronto apartment building evaluation for the (fictional) building address.',
+      description: 'SYNTHETIC SAMPLE — fictional data, not an actual City of Toronto record; format inspired by RentSafeTO. All scores and fields are invented demo values.',
       publicRecord: rentsafeMeta,
       textContent: JSON.stringify({ meta: rentsafeMeta, record: SAMPLE_RENTSAFE_RECORD }, null, 1),
     }),
@@ -222,8 +223,8 @@ export async function buildSampleData(): Promise<SampleData> {
       id: uuid(),
       date: '2026-02',
       precision: 'month',
-      title: 'Building evaluation record located',
-      details: 'A City of Toronto RentSafeTO evaluation record for the building address was located through Toronto Open Data and attached as public data.',
+      title: 'Synthetic public-data sample added',
+      details: 'A synthetic sample record in the format of a City of Toronto RentSafeTO evaluation was added to demonstrate the public-data exhibit type. All values are invented — no live lookup was performed.',
       exhibitIds: [exhibits[5].id],
     },
     {

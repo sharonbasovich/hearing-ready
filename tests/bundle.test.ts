@@ -1,9 +1,64 @@
 import { describe, expect, it } from 'vitest';
-import { PDFArray, PDFDocument, PDFName, PDFRef } from 'pdf-lib';
+import { inflateSync } from 'node:zlib';
+import { PDFArray, PDFDocument, PDFName, PDFRawStream, PDFRef } from 'pdf-lib';
 import { generateBundle } from '../src/pdf/bundle';
 import { exhibitNumber } from '../src/lib/exhibits';
 import { makeBundle, makeEvent, makeExhibit, TINY_PNG } from './fixtures';
-import type { CaseBundle } from '../src/types';
+import type { CaseBundle, Exhibit } from '../src/types';
+
+/** Extracts literal strings drawn with Tj/TJ ops from all (flate) content streams. */
+async function extractPdfText(bytes: Uint8Array): Promise<string> {
+  const doc = await PDFDocument.load(bytes);
+  const unescape = (s: string) =>
+    s.replace(/\\(n|r|t|b|f|\(|\)|\\|[0-7]{1,3})/g, (_, g: string) => {
+      const map: Record<string, string> = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', '(': '(', ')': ')', '\\': '\\' };
+      return map[g] ?? String.fromCharCode(parseInt(g, 8));
+    });
+  const literal = /\((?:\\[\s\S]|[^\\()])*\)/g;
+  const hexStr = /<([0-9A-Fa-f\s]+)>/g;
+  const winAnsi = (s: string) =>
+    s.replace(/[\x80-\x9F]/g, (c) =>
+      ({ '\x96': '–', '\x97': '—', '\x91': '‘', '\x92': '’', '\x93': '“', '\x94': '”', '\x85': '…' })[c] ?? c);
+  const parts: string[] = [];
+  for (const [, obj] of doc.context.enumerateIndirectObjects()) {
+    if (!(obj instanceof PDFRawStream)) continue;
+    let data: Uint8Array;
+    try {
+      data = inflateSync(Buffer.from(obj.contents));
+    } catch {
+      continue;
+    }
+    const s = Buffer.from(data).toString('latin1');
+    for (const m of s.matchAll(literal)) parts.push(unescape(m[0].slice(1, -1)));
+    for (const m of s.matchAll(hexStr)) {
+      const hex = m[1].replace(/\s/g, '');
+      if (hex.length % 2) continue;
+      parts.push(winAnsi(Buffer.from(hex, 'hex').toString('latin1')));
+    }
+  }
+  return parts.join(' ');
+}
+
+function publicRecordExhibit(synthetic: boolean): Exhibit {
+  const meta = {
+    dataset: 'apartment-building-evaluation',
+    query: 'TEST QUERY',
+    fetchedAt: '2026-09-20T12:00:00.000Z',
+    sourceUrl: 'https://open.toronto.ca/dataset/apartment-building-evaluation/',
+    recordId: 'x',
+    ...(synthetic ? { synthetic: true } : {}),
+  };
+  const record = { 'SITE ADDRESS': '999 FICTIONAL AVE', 'PROPERTY TYPE': 'PRIVATE', 'CURRENT BUILDING EVAL SCORE': '81' };
+  return makeExhibit({
+    fileName: 'rentsafeto-record.json',
+    kind: 'public-record',
+    source: 'public-data',
+    mimeType: 'application/json',
+    description: synthetic ? 'SYNTHETIC SAMPLE — fictional data, not an actual City of Toronto record.' : 'Live record.',
+    publicRecord: meta,
+    textContent: JSON.stringify({ meta, record }),
+  });
+}
 
 async function makeSamplePdf(): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
@@ -102,6 +157,30 @@ describe('generateBundle', () => {
     const files = new Map([[bad.id, new Uint8Array([1, 2, 3, 4])]]);
     const { plan } = await generateBundle({ bundle, files });
     expect(plan.warnings.some((w) => w.includes('broken.pdf'))).toBe(true);
+  });
+
+  it('labels a synthetic public-record exhibit as invented data, never City-published', async () => {
+    const ex = publicRecordExhibit(true);
+    const bundle = makeBundle({ exhibits: [ex], events: [makeEvent({ exhibitIds: [ex.id] })] });
+    const { bytes } = await generateBundle({ bundle, files: new Map() });
+    const text = await extractPdfText(bytes);
+    expect(text).toContain('SYNTHETIC SAMPLE');
+    expect(text).toContain('NOT AN ACTUAL CITY OF TORONTO RECORD');
+    expect(text).toContain('invented sample data');
+    expect(text).toContain('Synthetic sample (RentSafeTO format)');
+    expect(text).not.toContain('Scores are as published');
+    expect(text).not.toContain('PUBLIC DATA');
+  });
+
+  it('keeps genuine live-record labeling for non-synthetic exhibits', async () => {
+    const ex = publicRecordExhibit(false);
+    const bundle = makeBundle({ exhibits: [ex], events: [makeEvent({ exhibitIds: [ex.id] })] });
+    const { bytes } = await generateBundle({ bundle, files: new Map() });
+    const text = await extractPdfText(bytes);
+    expect(text).toContain('PUBLIC DATA');
+    expect(text).toContain('CITY OF TORONTO OPEN DATA');
+    expect(text).toContain('Scores are as published by the City of Toronto');
+    expect(text).not.toContain('SYNTHETIC SAMPLE');
   });
 
   it('keeps exhibit numbering consistent between events and targets', async () => {
