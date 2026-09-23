@@ -37,6 +37,61 @@ function matchTokens(query: string): string[] {
     .filter((t) => t.length >= 2 && !SOFT_TOKENS.has(t));
 }
 
+// Street-type words stay soft, but spelled-out directions (EAST/WEST/…) are
+// significant: '55 BLOOR ST E' and '55 BLOOR ST W' are different buildings.
+const ADDR_SOFT = new Set([...SOFT_TOKENS].filter((t) => !['EAST', 'WEST', 'NORTH', 'SOUTH'].includes(t)));
+
+const UNIT_WORDS =
+  /\b(UNIT|SUITE|STE|APT|APARTMENT|BSMT|BASEMENT|ROOM|RM|FL|FLOOR|PH|PENTHOUSE|TH|#)\s*[\dA-Z-]*/g;
+
+/**
+ * Reduces a tenant-entered unit address to street-level tokens: strips
+ * unit/suite designators, keeps the first comma segment that has both a
+ * number and a street-name word, and drops soft suffix/direction words.
+ */
+function buildingTokens(address: string): string[] {
+  const cleaned = address.toUpperCase().replace(/#/g, ' UNIT ').replace(UNIT_WORDS, ' ');
+  const segs = cleaned
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const hasName = (s: string) =>
+    s.split(/\s+/).some((t) => t.length >= 2 && !SOFT_TOKENS.has(t) && !/^\d+$/.test(t));
+  const seg =
+    segs.find((s) => /\d/.test(s) && hasName(s)) ?? segs.find((s) => /\d/.test(s)) ?? segs[0] ?? '';
+  return seg
+    .split(/[\s/-]+/)
+    .map((t) => t.replace(/[^A-Z0-9]/g, ''))
+    .filter((t) => t.length >= 2 && !ADDR_SOFT.has(t));
+}
+
+export interface AddressMatch {
+  /** true when every case street token appears in the record's SITE ADDRESS. */
+  ok: boolean;
+  /** false when the case address (or site address) yields nothing to compare. */
+  verifiable: boolean;
+  /** Street-level tokens derived from the case address, for display/debugging. */
+  requiredTokens: string[];
+}
+
+/**
+ * Guards against attaching a RentSafeTO record for a different building.
+ * Every street-level token of the case address (e.g. the street number and
+ * street name) must appear as a whole token in SITE ADDRESS.
+ */
+export function checkAddressMatch(caseAddress: string, siteAddress: string): AddressMatch {
+  const required = buildingTokens(caseAddress);
+  const site = new Set(
+    siteAddress
+      .toUpperCase()
+      .split(/[\s/-]+/)
+      .map((t) => t.replace(/[^A-Z0-9]/g, ''))
+      .filter((t) => t.length >= 2 && !ADDR_SOFT.has(t)),
+  );
+  const verifiable = required.length > 0 && site.size > 0;
+  return { ok: verifiable && required.every((t) => site.has(t)), verifiable, requiredTokens: required };
+}
+
 export function datastoreSearchUrl(query: string, limit = 10): string {
   const params = new URLSearchParams({
     resource_id: DATASTORE_RESOURCE_ID,

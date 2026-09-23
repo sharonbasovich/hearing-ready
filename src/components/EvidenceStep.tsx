@@ -3,7 +3,7 @@ import type { CaseBundle, Exhibit } from '../types';
 import { classifyFile, exhibitNumber, formatBytes, kindLabel, moveExhibit, removeExhibit, sourceLabel } from '../lib/exhibits';
 import { sha256Hex, shortHash, uuid } from '../lib/bytes';
 import { putFile, deleteFile } from '../store';
-import { searchBuildings, type BuildingRecord, type RentSafeResult, DATASET_PAGE_URL } from '../rentsafe';
+import { searchBuildings, checkAddressMatch, type BuildingRecord, type RentSafeResult, DATASET_PAGE_URL } from '../rentsafe';
 
 interface Props {
   bundle: CaseBundle;
@@ -124,7 +124,7 @@ export default function EvidenceStep({ bundle, update, onNext, onBack }: Props) 
         )}
       </div>
 
-      <RentSafePanel update={update} />
+      <RentSafePanel update={update} caseAddress={bundle.unitAddress} />
 
       <div className="card">
         <h3>Exhibits ({bundle.exhibits.length})</h3>
@@ -173,11 +173,12 @@ export default function EvidenceStep({ bundle, update, onNext, onBack }: Props) 
   );
 }
 
-function RentSafePanel({ update }: { update: Props['update'] }) {
+function RentSafePanel({ update, caseAddress }: { update: Props['update']; caseAddress: string }) {
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<RentSafeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [ackMismatch, setAckMismatch] = useState(false);
 
   async function search() {
     if (!query.trim()) return;
@@ -194,6 +195,8 @@ function RentSafePanel({ update }: { update: Props['update'] }) {
   }
 
   async function attach(rec: BuildingRecord) {
+    const siteAddress = String(rec['SITE ADDRESS'] ?? '');
+    const match = checkAddressMatch(caseAddress, siteAddress);
     const meta = {
       dataset: 'apartment-building-evaluation',
       query,
@@ -205,13 +208,17 @@ function RentSafePanel({ update }: { update: Props['update'] }) {
     const bytes = new TextEncoder().encode(payload);
     const ex: Exhibit = {
       id: uuid(),
-      fileName: `rentsafeto-${(rec['SITE ADDRESS'] ? String(rec['SITE ADDRESS']) : 'record').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`,
+      fileName: `rentsafeto-${(siteAddress || 'record').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`,
       kind: 'public-record',
       source: 'public-data',
       mimeType: 'application/json',
       byteSize: bytes.length,
       sha256: await sha256Hex(bytes),
-      description: `RentSafeTO apartment building evaluation record fetched from Toronto Open Data for "${query}". Public data — verify against the City's dataset.`,
+      description: `RentSafeTO apartment building evaluation record fetched from Toronto Open Data for "${query}". Public data — verify against the City's dataset.${
+        match.ok
+          ? ''
+          : ' Address check: SITE ADDRESS does not match this case\'s building address — attached for reference only, at the user\'s explicit acknowledgment.'
+      }`,
       createdAt: new Date().toISOString(),
       capturedDate: rec['EVALUATION COMPLETED ON'] ? String(rec['EVALUATION COMPLETED ON']) : null,
       textContent: payload,
@@ -247,20 +254,49 @@ function RentSafePanel({ update }: { update: Props['update'] }) {
       {result && (
         <>
           <p className="hint" style={{ marginTop: 10 }}>{result.total} record{result.total === 1 ? '' : 's'} matched (showing up to {result.records.length}).</p>
+          {result.records.some((rec) => !checkAddressMatch(caseAddress, String(rec['SITE ADDRESS'] ?? '')).ok) && (
+            <div className="banner warn" style={{ marginTop: 10 }}>
+              Some results do not match this case's building address ({caseAddress || 'not set'}). Attaching an
+              unrelated building's record would add unrelated evidence to the bundle.{' '}
+              <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontWeight: 600 }}>
+                <input type="checkbox" checked={ackMismatch} onChange={(e) => setAckMismatch(e.target.checked)} />
+                Attach mismatched records anyway — for reference only
+              </label>
+            </div>
+          )}
           <div style={{ overflowX: 'auto' }}>
             <table className="results-table">
               <thead>
                 <tr><th>Site address</th><th>Evaluated</th><th>Score</th><th></th></tr>
               </thead>
               <tbody>
-                {result.records.map((rec, i) => (
-                  <tr key={i}>
-                    <td>{String(rec['SITE ADDRESS'] ?? '—')}</td>
-                    <td>{String(rec['EVALUATION COMPLETED ON'] ?? '—')}</td>
-                    <td>{String(rec['CURRENT BUILDING EVAL SCORE'] ?? '—')}</td>
-                    <td><button className="btn small" onClick={() => void attach(rec)}>Attach as exhibit</button></td>
-                  </tr>
-                ))}
+                {result.records.map((rec, i) => {
+                  const m = checkAddressMatch(caseAddress, String(rec['SITE ADDRESS'] ?? ''));
+                  return (
+                    <tr key={i}>
+                      <td>
+                        {String(rec['SITE ADDRESS'] ?? '—')}
+                        {!m.ok && (
+                          <div className="hint" style={{ color: 'var(--warn, #9a6a00)' }}>
+                            {m.verifiable ? 'Does not match case address' : 'Cannot verify against case address'}
+                          </div>
+                        )}
+                      </td>
+                      <td>{String(rec['EVALUATION COMPLETED ON'] ?? '—')}</td>
+                      <td>{String(rec['CURRENT BUILDING EVAL SCORE'] ?? '—')}</td>
+                      <td>
+                        <button
+                          className="btn small"
+                          disabled={!m.ok && !ackMismatch}
+                          title={!m.ok && !ackMismatch ? 'Address mismatch — acknowledge above to attach for reference only' : undefined}
+                          onClick={() => void attach(rec)}
+                        >
+                          {m.ok ? 'Attach as exhibit' : 'Attach anyway'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {result.records.length === 0 && <tr><td colSpan={4}>No matching buildings.</td></tr>}
               </tbody>
             </table>
