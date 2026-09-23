@@ -1,8 +1,10 @@
 # Hearing-Ready
 
+[Live browser demo](https://sharonbasovich.github.io/hearing-ready/)
+
 **A local-first evidence-bundle compiler for Ontario tenants preparing for a Landlord and Tenant Board (LTB) hearing** — focused on the T6 maintenance-application workflow and issues raised under s.82 of the Residential Tenancies Act, 2006.
 
-Built for **LexHack 2026** (Devpost: https://lexhack-2026.devpost.com). Demo data is 100% synthetic.
+Built for **LexHack 2026** (Devpost: https://lexhack-2026.devpost.com). The bundled sample case is entirely synthetic; the optional RentSafeTO lookup can fetch real public records for a matching building.
 
 ## What it does
 
@@ -23,7 +25,7 @@ Built for **LexHack 2026** (Devpost: https://lexhack-2026.devpost.com). Demo dat
 - Hearing-Ready is an **organizer**, not a legal tool. It produces a *draft for your review*; it does not file anything with the LTB, does not send anything to your landlord, and does not offer legal advice.
 - Disclosure deadlines and hearing rules are set by the LTB and change — always verify on official Ontario sources (see below).
 - Only the first 3 pages of an uploaded PDF are embedded; keep originals.
-- Exhibit "public data" reproduces City of Toronto open data as fetched; it is not verified against the underlying inspection file.
+- A live RentSafeTO exhibit reproduces City of Toronto open data as fetched; it is not verified against the underlying inspection file. The bundled sample exhibit is invented and labeled as such, not a City-published record. The app checks the case building address before allowing a live record to be attached.
 
 ## Official sources
 
@@ -47,7 +49,7 @@ npm run build    # typecheck + production build → dist/
 
 ## Demo
 
-- One-click **"Load sample case"** (top-right) loads a fully synthetic case: generated photos, a generated PDF letter, a text-message export, a sample public-data record, and a linked timeline — then **Generate & download PDF**.
+- One-click **"Load sample case"** (top-right) loads a fully synthetic case: generated photos, a generated PDF letter, a text-message export, a fictional RentSafeTO-style record clearly labeled as synthetic, and a linked timeline — then **Generate & download PDF**.
 - ≤3-minute demo script: see [DEMO.md](DEMO.md).
 
 ## Tech
