@@ -23,14 +23,16 @@ Built for **LexHack 2026** (Devpost: https://lexhack-2026.devpost.com). The bund
 ## Important limitations
 
 - Hearing-Ready is an **organizer**, not a legal tool. It produces a *draft for your review*; it does not file anything with the LTB, does not send anything to your landlord, and does not offer legal advice.
-- Disclosure deadlines and hearing rules are set by the LTB and change — always verify on official Ontario sources (see below).
+- Disclosure deadlines and hearing rules are set by the LTB and change — always verify on official Ontario sources (see below). Under the current Rules of Procedure (Rule 19), parties generally must give the other parties and the LTB the evidence they intend to rely on at least 7 days before a case management conference or hearing, and responding evidence at least 5 days before, unless the Board directs otherwise.
 - Only the first 3 pages of an uploaded PDF are embedded; keep originals.
 - A live RentSafeTO exhibit reproduces City of Toronto open data as fetched; it is not verified against the underlying inspection file. The bundled sample exhibit is invented and labeled as such, not a City-published record. The app checks the case building address before allowing a live record to be attached.
 
 ## Official sources
 
 - Landlord and Tenant Board — https://tribunalsontario.ca/ltb/
-- LTB Rules of Practice and Procedure — https://tribunalsontario.ca/ltb/rules-of-practice/
+- LTB Rules of Procedure — https://tribunalsontario.ca/documents/ltb/Rules/LTB-Rules_of_Procedure.html
+- LTB law, rules and decisions — https://tribunalsontario.ca/ltb/law-rules-and-decisions/
+- LTB Practice Direction on Evidence — https://tribunalsontario.ca/documents/ltb/Practice%20Directions/Practice%20Direction%20on%20Evidence.html
 - LTB forms incl. T6 — https://tribunalsontario.ca/ltb/forms/
 - Residential Tenancies Act, 2006 (incl. s.82) — https://www.ontario.ca/laws/statute/06r17
 - RentSafeTO — https://www.toronto.ca/community-people/housing-shelter/rental-housing-standards/apartment-building-standards/

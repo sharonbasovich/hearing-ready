@@ -188,7 +188,7 @@ export function summarizeRecord(rec: BuildingRecord): { label: string; value: st
   add('Proactive building score', pick('PROACTIVE BUILDING SCORE'));
   add('Current reactive score', pick('CURRENT REACTIVE SCORE'));
   add('Areas evaluated', pick('NO OF AREAS EVALUATED'));
-  // A few maintenance-relevant subscores; RentSafeTO scores these 1–5 (5 best).
+  // A few maintenance-relevant subscores published by the dataset.
   const subKeys = [
     'COMMON AREA PESTS',
     'BUILDING CLEANLINESS',

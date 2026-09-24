@@ -57,6 +57,10 @@ export default function App() {
     return <div className="app-shell"><div className="topbar"><span className="brand">Hearing-Ready</span></div></div>;
   }
 
+  const isPristine =
+    !bundle.title && !bundle.tenantName && !bundle.unitAddress && !bundle.landlordName &&
+    bundle.events.length === 0 && bundle.exhibits.length === 0;
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -77,6 +81,26 @@ export default function App() {
       <div className="layout">
         <Stepper current={step} onNavigate={setStep} />
         <main className="main">
+          {isPristine && step === 'case' && (
+            <section className="card hero" aria-label="Welcome">
+              <h2>Scattered photos, texts, and letters → one evidence bundle</h2>
+              <p className="sub">
+                For Ontario tenants preparing a Landlord and Tenant Board maintenance application (T6) or raising
+                issues under s.82 of the Residential Tenancies Act.
+              </p>
+              <ol className="hero-steps">
+                <li><strong>Import</strong> photos, letters, and message exports — each becomes a numbered exhibit with a SHA-256 checksum.</li>
+                <li><strong>Pin</strong> what happened to a dated timeline and tag the exhibits that prove each event.</li>
+                <li><strong>Export</strong> a paginated PDF: cover, clickable table of contents, timeline with exhibit links, filing reminders.</li>
+              </ol>
+              <div className="hero-cta">
+                <button className="btn primary" onClick={() => void loadSample()} disabled={loadingSample}>
+                  {loadingSample ? 'Loading sample…' : 'Try it — load the synthetic sample case'}
+                </button>
+                <span className="hint">…or fill in your own case details below. Prototype demo — not legal advice.</span>
+              </div>
+            </section>
+          )}
           <div className="banner info">
             Hearing-Ready organizes a <strong>draft bundle for your review</strong>. It does not file anything with the
             LTB and is not legal advice. Verify deadlines and rules on{' '}

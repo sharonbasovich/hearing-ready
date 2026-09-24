@@ -276,7 +276,7 @@ function drawNotices(ctx: RenderCtx) {
   heading(ctx, 'How to use this bundle');
   const sections: [string, string][] = [
     ['What this is', 'A paginated compilation of your dated timeline and numbered source exhibits, assembled locally on your device to help you prepare for a Landlord and Tenant Board hearing (for example a T6 maintenance application, or issues raised under s.82 of the Residential Tenancies Act, 2006).'],
-    ['Disclosure timing', 'The LTB generally requires parties to disclose the evidence they intend to rely on before the hearing. The Board\'s Rules of Procedure and your notice of hearing set the deadline for your proceeding — verify the current rules on tribunalsontario.ca/ltb before relying on this bundle.'],
+    ['Disclosure timing', 'LTB Rule 19: unless the Board directs otherwise, parties must give the other parties and the LTB the evidence they intend to rely on at least 7 days before a case management conference or hearing; responding evidence at least 5 days before. The Rules of Procedure and your notice of hearing set the deadline for your proceeding — verify the current rules on tribunalsontario.ca/ltb before relying on this bundle.'],
     ['Exhibits and sources', 'Each timeline event lists numbered exhibit chips (E1, E2, …). In the PDF, clicking a chip or a table-of-contents entry jumps to that exhibit page. Every exhibit page states where the material came from.'],
     ['Checksums', 'Each uploaded file shows a SHA-256 checksum. A checksum only identifies the exact bytes of the file you imported — it does not prove where a file came from, when it was made, or that it is authentic.'],
     ['Your files stay local', 'Uploads are stored in this browser on this device only. They are not sent to any server or AI service. The only optional network feature is the Toronto Open Data (RentSafeTO) lookup, which sends only the street name you type.'],
@@ -594,7 +594,7 @@ function drawPublicRecord(ctx: RenderCtx, ex: Exhibit) {
 function drawChecklist(ctx: RenderCtx) {
   heading(ctx, 'Before you file — checklist');
   const items = [
-    'Check the LTB Rules of Procedure and your notice of hearing for the evidence-disclosure deadline that applies to your proceeding. Deadlines are set by the Board and can change — verify on tribunalsontario.ca/ltb.',
+    'Check the LTB Rules of Procedure and your notice of hearing for the disclosure deadline that applies to your proceeding — under Rule 19 that is generally 7 days before the hearing for your evidence, and 5 days for responding evidence, unless the Board directs otherwise.',
     'Re-read every timeline sentence. Keep only facts you can support, and confirm each exhibit chip points to the right source.',
     'Confirm exhibit descriptions say what each item is and where it came from.',
     'Keep the original files and any physical evidence — this PDF is an organizer, not a substitute for originals.',
@@ -626,7 +626,9 @@ function drawSources(ctx: RenderCtx, bundle: CaseBundle) {
   ctx.y -= 10;
   const sources: [string, string][] = [
     ['Landlord and Tenant Board (LTB)', 'https://tribunalsontario.ca/ltb/'],
-    ['LTB Rules of Practice and Procedure', 'https://tribunalsontario.ca/ltb/rules-of-practice/'],
+    ['LTB Rules of Procedure', 'https://tribunalsontario.ca/documents/ltb/Rules/LTB-Rules_of_Procedure.html'],
+    ['LTB law, rules and decisions (hub page)', 'https://tribunalsontario.ca/ltb/law-rules-and-decisions/'],
+    ['LTB Practice Direction on Evidence', 'https://tribunalsontario.ca/documents/ltb/Practice%20Directions/Practice%20Direction%20on%20Evidence.html'],
     ['LTB forms, including T6 (Tenant Application about Maintenance)', 'https://tribunalsontario.ca/ltb/forms/'],
     ['Residential Tenancies Act, 2006 (incl. s.82)', 'https://www.ontario.ca/laws/statute/06r17'],
     ['RentSafeTO — City of Toronto apartment building standards', 'https://www.toronto.ca/community-people/housing-shelter/rental-housing-standards/apartment-building-standards/'],

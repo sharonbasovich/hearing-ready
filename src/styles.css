@@ -158,6 +158,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
 .step-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; }
 
+.hero { border-left: 4px solid var(--accent); }
+.hero h2 { font-size: 21px; }
+.hero-steps { margin: 4px 0 16px; padding-left: 22px; }
+.hero-steps li { margin-bottom: 6px; font-size: 14.5px; }
+.hero-cta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.hero-cta .hint { color: var(--muted); font-size: 12.5px; }
+
 .results-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .results-table th { text-align: left; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; padding: 6px 8px; border-bottom: 1px solid var(--rule); }
 .results-table td { padding: 8px; border-bottom: 1px solid #eceff4; vertical-align: top; }
