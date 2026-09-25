@@ -3,6 +3,9 @@ import { defineConfig } from 'vitest/config'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Relative asset paths so `npm run build` deploys correctly to the
+  // GitHub Pages project path (…github.io/hearing-ready/).
+  base: './',
   plugins: [react()],
   test: {
     environment: 'node',
