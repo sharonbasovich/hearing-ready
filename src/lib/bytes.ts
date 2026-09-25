@@ -11,13 +11,12 @@ export function shortHash(hex: string | null): string {
 }
 
 export function slugify(s: string): string {
-  return (
-    s
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 48) || 'bundle'
-  );
+  const slug = s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  if (slug.length <= 48) return slug || 'bundle';
+  return slug.slice(0, 48).replace(/-[^-]*$/, '') || 'bundle';
 }
 
 export function uuid(): string {
