@@ -1,4 +1,6 @@
 initialize:
+  - run: python3 -m pip install pypdf   # verifies generated-PDF links/text in QA
+maintenance:
   - run: npm install
 knowledge:
   - name: lint
